@@ -17,9 +17,12 @@ const Home: NextPage = function () {
 			bundle: true,
 			write: false,
 			plugins: [unpkgPathPlugin()],
+			define: {
+				"process.env.NODE_ENV": JSON.stringify("production"),
+				global: "window",
+			},
 		});
 
-		console.log(`result`, result);
 		setCode(result.outputFiles[0].text);
 	};
 
@@ -49,7 +52,7 @@ const Home: NextPage = function () {
 					Submit
 				</button>
 			</form>
-			{code}
+			<pre>{code}</pre>
 		</Layout>
 	);
 };
