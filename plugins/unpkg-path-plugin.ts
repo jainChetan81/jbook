@@ -1,38 +1,22 @@
-import * as esbuild from "esbuild-wasm";
-import axios from "axios";
+import { PluginBuild } from "esbuild-wasm";
 
 const unpkgPathPlugin = () => ({
 	name: "unpkg-path-plugin",
-	// eslint-disable-next-line no-undef
-	setup(build: esbuild.PluginBuild) {
-		build.onResolve({ filter: /.*/ }, async (args: any) => {
-			console.log("onResole", args);
-			if (args.path === "index.js") {
-				return { path: args.path, namespace: "a" };
-			}
-			if (args.path.includes("./") || args.path.includes("../")) {
-				return { namespace: "a", path: new URL(args.path, `${args.importer}/`).href };
-			}
-			return { path: `https://unpkg.com/${args.path}`, namespace: "a" };
-		});
-		build.onLoad({ filter: /.*/ }, async (args: any) => {
-			console.log("onLoad", args);
-			if (args.path === "index.js") {
-				return {
-					loader: "jsx",
-					contents: `
-              import react, {useState} from "react";
-              import axios from "axios";
+	setup(build: PluginBuild) {
+		// Handle root entry file of 'index.js'
+		build.onResolve({ filter: /(^index\.js$)/ }, () => ({ path: "index.js", namespace: "a" }));
 
-            `,
-				};
-			}
-			const { data, request } = await axios.get(args.path);
-			return {
-				loader: "jsx",
-				contents: `${data}`,
-			};
-		});
+		// Handle relative paths in a module
+		build.onResolve({ filter: /^\.+\// }, (args: any) => ({
+			namespace: "a",
+			path: new URL(args.path, `https://unpkg.com${args.resolveDir}/`).href,
+		}));
+
+		// Handle main file of a module
+		build.onResolve({ filter: /.*/ }, async (args: any) => ({
+			namespace: "a",
+			path: `https://unpkg.com/${args.path}`,
+		}));
 	},
 });
 export default unpkgPathPlugin;

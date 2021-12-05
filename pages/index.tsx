@@ -2,6 +2,7 @@ import type { NextPage } from "next";
 import * as esbuild from "esbuild-wasm";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import Layout from "../components/Layout";
+import fetchPlugin from "../plugins/fetch-plugin";
 import unpkgPathPlugin from "../plugins/unpkg-path-plugin";
 
 const Home: NextPage = function () {
@@ -16,9 +17,9 @@ const Home: NextPage = function () {
 			entryPoints: ["index.js"],
 			bundle: true,
 			write: false,
-			plugins: [unpkgPathPlugin()],
+			plugins: [unpkgPathPlugin(), fetchPlugin(input)],
 			define: {
-				"process.env.NODE_ENV": JSON.stringify("production"),
+				"process.env.NODE_ENV": '"production"',
 				global: "window",
 			},
 		});
@@ -29,7 +30,7 @@ const Home: NextPage = function () {
 	const startService = async () => {
 		ref.current = await esbuild.startService({
 			worker: true,
-			wasmURL: "/esbuild.wasm",
+			wasmURL: "https://unpkg.com/esbuild-wasm@0.8.27/esbuild.wasm",
 		});
 	};
 
@@ -39,7 +40,7 @@ const Home: NextPage = function () {
 
 	return (
 		<Layout title="Home">
-			<form>
+			<form onSubmit={showTranspiledCode}>
 				<textarea
 					name="code"
 					id="code"
@@ -48,9 +49,7 @@ const Home: NextPage = function () {
 					value={input}
 					onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
 				/>
-				<button type="button" onClick={showTranspiledCode}>
-					Submit
-				</button>
+				<button type="submit">Submit</button>
 			</form>
 			<pre>{code}</pre>
 		</Layout>
